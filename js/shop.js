@@ -1,73 +1,218 @@
+// iniatial vars
+let cartList = [];
+let cart = [];
+let total = 0;
+let cartbutton = document.getElementById("cartfixed");
+let nav = document.getElementById("navbar-example2")
+let heightheader = document.getElementById('carouselExampleSlidesOnly'). offsetHeight;
+let title = "";
 
-// If you have time, you can move this variable "products" to a json or js file and load the data in this js. It will look more professional
+//onscroll function to nav and cart appears
+window.onscroll = function () {
+    scrollFunction()
+};
 
-// Array with products (objects) added directly with push(). Products in this array are repeated.
-var cartList = [];
+function scrollFunction() {
+    if (document.body.scrollTop > heightheader || document.documentElement.scrollTop > heightheader) {
+        cartbutton.style.display = "block";
+        nav.style.display = "none";
+    } else {
+        cartbutton.style.display = "none";
+        nav.style.display = "block";
+    }
+}
 
-// Improved version of cartList. Cart is an array of products (objects), but each one has a quantity field to define its quantity, so these products are not repeated.
-var cart = [];
-
-var total = 0;
 
 // Exercise 1
 function buy(id) {
-    cartList.push(products.find(ide => { return ide.id == id }));
+    cartList.push(products.find(ide => {
+        return ide.id == id
+    }));
+
     calculateTotal();
-    console.table(cartList)
-
-        }
-    
-
+    generateCart();
+    printCart();
+    product_modal();
+}
 
 // Exercise 2
 function cleanCart() {
-    cartList = [];
-    cart = [];
-    console.log("cartlist empty", cartList);
+    if (cartList.length !== 0) {
+        cartList = [];
+        cart = [];
+
+        generateCart();
+        all_products_removed();
+        open_modal();
+    }
+    else{
+        empty_cart();
+    }
+   
 }
 
 // Exercise 3
 function calculateTotal() {
-    // Calculate total price of the cart using the "cartList" array
-    total=0;
-    for(let i = 0; i < cartList.length; i++){
-        total += cartList[i].price;
+    let totalN = 0;
+    for (let i = 0; i < cartList.length; i++) {
+        totalN += cartList[i].price;
     }
-    console.log("total price", total);
+    total = totalN.toFixed(2);
+
+    let totalQuantity = 0;
+    cart.map(q => {
+        totalQuantity += q.quantity;
+    });
+    
+
 }
+
 // Exercise 4
 function generateCart() {
-    // Using the "cartlist" array that contains all the items in the shopping cart, 
-    // generate the "cart" array that does not contain repeated items, instead each item of this array "cart" shows the quantity of product.
+
+    cart = []
+    cartList.map(p => {
+        cart[p.id] ? cart[p.id].quantity += 1 : cart[p.id] = {
+            ...p,
+            quantity: 1
+        }
+    });
+
+    // total in cart
+    let totalQuantity = 0;
+    cart.map(q => {
+        totalQuantity += q.quantity;
+    });
+
+    document.getElementById("countercard").innerHTML = totalQuantity;
+    document.getElementById("count_product").innerHTML = totalQuantity;
+
 }
+
 
 // Exercise 5
 function applyPromotionsCart() {
-    // Apply promotions to each item in the array "cart"
+    cart.map(p => {
+        if (p.offer && p.quantity >= p.offer.number) p.subtotalWithDiscount = (p.price * p.quantity * (100 - p.offer.percent) / 100);
+    });
 }
 
-// Exercise 6
+
 function printCart() {
-    // Fill the shopping cart modal manipulating the shopping cart dom
+    calculateTotal()
+    generateCart()
+    applyPromotionsCart()
+
+    let rows = "";
+    cart.map(p => {
+        rows += `
+                <tr>
+                <th scope="row"> ${p.name} </th>
+                <td>${p.price} </td>
+                <td>${p.quantity}</td>
+                <td>${p.subtotalWithDiscount ? p.subtotalWithDiscount : p.price * p.quantity}</td>
+                <td class="px-3">
+                <span class="btn btn-light me-2 px-2 border" onclick="addToCart(${p.id})">+</span>
+                <span class="btn btn-light px-2 border" onclick="removeFromCart(${p.id})">-</span>
+                </td>
+                </tr>
+                `
+    });
+
+    document.getElementById("cart_list").innerHTML = rows;
+    document.getElementById("total_price").innerHTML = total;
+
 }
 
+// function calculateTotalWithDiscount(){
+//     let TotalWithDiscount;
+
+//     cart.map(p => {
+//         TotalWithDiscount = 
+//         `${p.subtotalWithDiscount ? p.subtotalWithDiscount : p.price * p.quantity}`
+//     });
+
+//     document.getElementById("total_price_with_discount").innerHTML = total;
+
+// }
 
 // ** Nivell II **
 
 // Exercise 7
 function addToCart(id) {
-    // Refactor previous code in order to simplify it 
-    // 1. Loop for to the array products to get the item to add to cart
-    // 2. Add found product to the cart array or update its quantity in case it has been added previously.
+    cartList.push(products.find(ide => {
+        return ide.id == id
+    }));
+
+    applyPromotionsCart();
+    generateCart();
+    printCart();
+    calculateTotal();
+    product_modal();
+
 }
 
 // Exercise 8
 function removeFromCart(id) {
     // 1. Loop for to the array products to get the item to add to cart
     // 2. Add found product to the cartList array
+
+    let cartItem;
+    const cartItemIndex = cartList.findIndex(element => element.id === id);
+
+    if (cartItemIndex != -1) {
+        cartItem = cartList[cartItemIndex];
+        if (cartItem.quantity > 1) {
+            cartItem.quantity--;
+        } else {
+            cartList.splice(cartItemIndex, 1);
+        }
+    }
+
+    calculateTotal();
+    applyPromotionsCart();
+    generateCart();
+    printCart();
+    product_modal_remove();
 }
 
-function open_modal(){
-	console.log("Open Modal");
-	printCart();
+function open_modal() {
+    printCart();
+}
+
+
+// sweetalert
+function product_modal() {
+    title = '<p>Product added to cart</p>';
+    return swalMaster(title);
+}
+
+function product_modal_remove() {
+    title = '<p>Product removed from cart</p>';
+   return swalMaster(title);
+}
+
+function all_products_removed() {
+    title = '<p>All products removed from cart</p>';
+   return swalMaster(title);
+}
+
+function empty_cart() {
+    title = '<p>Not possible - Cart is empty</p>';
+   return swalMaster(title);
+}
+
+function swalMaster(title) {
+    Swal.fire({
+        icon: 'success',
+        title: title,
+        showConfirmButton: false,
+        timer: 1000,
+        showClass: {
+            popup: 'animate__animated animate__fadeInDown'
+        },
+        hideClass: {
+            popup: 'animate__animated animate__fadeOutUp'
+        }
+    })
 }
